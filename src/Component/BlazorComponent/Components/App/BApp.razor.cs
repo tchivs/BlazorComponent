@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
@@ -14,13 +15,10 @@ namespace BlazorComponent
         [Inject]
         protected HeadJsInterop HeadJsInterop { get; set; }
 
-        protected CssBuilder WrapCssBuilder { get; } = new CssBuilder();
-
-        public ThemeCssBuilder ThemeCssBuilder { get; } = new ThemeCssBuilder();
+        protected ThemeCssBuilder ThemeCssBuilder { get; } = new ThemeCssBuilder();
 
         protected override Task OnInitializedAsync()
         {
-            Console.WriteLine("1234");
             if (Variables.Theme != null)
                 HeadJsInterop.InsertAdjacentHTML("beforeend", ThemeCssBuilder.Build());
 

@@ -1,0 +1,59 @@
+﻿@namespace BlazorComponent
+@inherits BDomComponentBase
+@typeparam TItem
+
+<div class="@CssProvider.GetClass(this)" style="@CssProvider.GetStyle(this)" id="@Id" @ref="Ref">
+    @Top
+    <div class="@CssProvider.GetClass(this,"wrap")">
+        <table>
+            @if (Loading)
+            {
+                <SlotComponent Description="SlotProvider.GetSlot<BTableLoading>()"></SlotComponent>
+                <tbody class="@CssProvider.GetClass(this,"empty")">
+                    <tr>
+                        <td>Loading... Please wait</td>
+                    </tr>
+                </tbody>
+            }
+            else
+            {
+                if (!HideDefaultHeader)
+                {
+                    <SlotComponent Description="SlotProvider.GetSlot<BTableHeader>()"></SlotComponent>
+                }
+                <tbody>
+                    @if (Items == null)
+                    {
+                        if (NoResult != null)
+                        {
+                            @NoResult
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="@Headers.Count" style="text-align:center">No result</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        var items = Items.Skip(PageStart - 1).Take(PageSize);
+                        foreach (var item in items)
+                        {
+                            <tr>
+                                @ChildContent(item)
+                            </tr>
+                        }
+                    }
+                </tbody>
+
+            }
+        </table>
+    </div>
+    @if (!HideDefaultFooter && Items != null)
+    {
+        <SlotComponent Description="SlotProvider.GetSlot<BTableFooter>()"></SlotComponent>
+    }
+    @Bottom
+</div>
+

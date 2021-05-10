@@ -1,0 +1,17 @@
+﻿@namespace BlazorComponent
+@typeparam T
+@inherits BDomComponentBase
+
+<SlotComponent Description="SlotProvider.GetSlot<BListItem>()">
+    @if (SelectWrapper.Multiple)
+    {
+        <SlotComponent Description="SlotProvider.GetSlot<BListItemAction>()">
+            <SlotComponent Description="SlotProvider.GetSlot<BCheckbox>()"></SlotComponent>
+        </SlotComponent>
+    }
+    <SlotComponent Description="SlotProvider.GetSlot<BListItemContent>()">
+        <SlotComponent Description="SlotProvider.GetSlot<BListItemTitle>()">
+            @ChildContent
+        </SlotComponent>
+    </SlotComponent>
+</SlotComponent>

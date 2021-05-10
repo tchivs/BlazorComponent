@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BlazorComponent.Components.Core.CssProcess;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.RenderTree;
@@ -10,16 +10,23 @@ namespace BlazorComponent
 {
     public abstract class BDomComponentBase : BComponentBase
     {
-        private string _class;
-        private string _style;
+        private ElementReference _ref;
+
+        public BDomComponentBase()
+        {
+            CssProvider.StaticClassProvider = () => Class;
+            CssProvider.StaticStyleProvider = () => Style;
+        }
+
+        protected ComponentCssProvider CssProvider { get; } = new();
+
+        protected ComponentSlotProvider SlotProvider { get; } = new();
 
         [Inject]
-        private IComponentIdGenerator ComponentIdGenerator { get; set; }
+        public IComponentIdGenerator ComponentIdGenerator { get; set; }
 
         [Parameter]
         public string Id { get; set; }
-
-        private ElementReference _ref;
 
         /// <summary>
         /// Returned ElementRef reference for DOM element.
@@ -34,15 +41,23 @@ namespace BlazorComponent
             }
         }
 
-        protected CssBuilder CssBuilder { get; } = new CssBuilder();
+        /// <summary>
+        /// Specifies one or more class names for an DOM element.
+        /// </summary>
+        [Parameter]
+        public string Class { get; set; }
 
-        protected StyleBuilder StyleBuilder { get; } = new StyleBuilder();
+        /// <summary>
+        /// Specifies an inline style for an DOM element.
+        /// </summary>
+        [Parameter]
+        public string Style { get; set; }
 
-        public BDomComponentBase()
-        {
-            CssBuilder.Add(() => Class);
-            StyleBuilder.Add(() => Style);
-        }
+        /// <summary>
+        /// Custom attributes
+        /// </summary>
+        [Parameter(CaptureUnmatchedValues = true)]
+        public IDictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();
 
         protected override void OnInitialized()
         {
@@ -50,53 +65,15 @@ namespace BlazorComponent
             base.OnInitialized();
         }
 
-        /// <summary>
-        /// Specifies one or more class names for an DOM element.
-        /// </summary>
-        [Parameter]
-        public string Class
-        {
-            get => _class;
-            set
-            {
-                _class = value;
-                CssBuilder.OriginalClass = value;
-            }
-        }
-
-        /// <summary>
-        /// Specifies an inline style for an DOM element.
-        /// </summary>
-        [Parameter]
-        public string Style
-        {
-            get => _style;
-            set
-            {
-                _style = value;
-                StyleBuilder.OriginalStyle = value;
-                StateHasChanged(); // TODO: need this?
-            }
-        }
-
-        /// <summary>
-        /// Custom attributes
-        /// </summary>
-        [Parameter(CaptureUnmatchedValues = true)]
-        public IDictionary<string, object> Attributes { get; set; }
-
-        public abstract void SetComponentClass();
-
         protected override Task OnInitializedAsync()
         {
             SetComponentClass();
-
             return base.OnInitializedAsync();
         }
 
-        protected virtual string GenerateStyle()
+        protected virtual void SetComponentClass()
         {
-            return Style;
+
         }
 
         /// <summary>

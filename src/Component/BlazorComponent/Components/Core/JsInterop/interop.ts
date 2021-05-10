@@ -608,7 +608,7 @@ function mentionsOnWindowClick(e) {
 
 //#endregion
 
-export { enableDraggable, disableDraggable, resetModalPosition } from "./modules/dragHelper";
+export { disableDraggable, enableDraggable, resetModalPosition } from "./modules/dragHelper";
 
 export function bindTableHeaderAndBodyScroll(bodyRef, headerRef) {
     bodyRef.bindScrollLeftToHeader = () => {
@@ -671,7 +671,24 @@ export function removePreventEnterOnOverlayVisible(element) {
 }
 
 export function insertAdjacentHTML(position, text: string) {
-    debugger
-    console.log("insertAdjacentHTML:" + position + " - " + text);
     document.head.insertAdjacentHTML(position, text);
+}
+
+export function getImageDimensions(src: string) {
+    return new Promise(function (resolve, reject) {
+        var img = new Image()
+        img.src = src
+        img.onload = function () {
+            resolve({
+                width: img.width,
+                height: img.height
+            })
+        }
+        img.onerror = function () {
+            reject({
+                width: 0,
+                height: 0
+            })
+        }
+    })
 }

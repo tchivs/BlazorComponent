@@ -1,0 +1,17 @@
+﻿@namespace BlazorComponent
+@inherits BDomComponentBase
+
+<div class="@CssProvider.GetClass(this)">
+    <div class="@CssProvider.GetClass(this,"select")">
+        <SlotComponent Description="SlotProvider.GetSlot<BSelect<string>>()"></SlotComponent>
+    </div>
+    <div class="@CssProvider.GetClass(this,"pagination")">
+        @PageStart-@PageStop of @TotalCount
+    </div>
+    <div class="@CssProvider.GetClass(this,"before")">
+        <SlotComponent Description="SlotProvider.GetSlot<BButton>(PREV)"></SlotComponent>
+    </div>
+    <div class="@CssProvider.GetClass(this,"after")">
+        <SlotComponent Description="SlotProvider.GetSlot<BButton>(NEXT)"></SlotComponent>
+    </div>
+</div>

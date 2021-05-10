@@ -1,41 +1,31 @@
-﻿using System.Collections.Generic;
-using BlazorComponent.Components.Core.CssProcess;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 
 namespace BlazorComponent
 {
     public abstract partial class BCard : BDomComponentBase
     {
+        [Parameter] 
+        public StringOrNumber Height { get; set; }
 
+        [Parameter] 
+        public StringOrNumber MaxHeight { get; set; }
 
-        protected CssBuilder CardCoverCssBuilder { get; } = new CssBuilder();
-        protected StyleBuilder CoverStyleBuilder { get; } = new StyleBuilder();
+        [Parameter] 
+        public StringOrNumber MinHeight { get; set; }
 
-        protected CssBuilder TitleCssBuilder { get; } = new CssBuilder();
-        protected CssBuilder SubTitleCssBuilder { get; } = new CssBuilder();
+        [Parameter] 
+        public StringOrNumber Width { get; set; }
 
-        protected CssBuilder TextCssBuilder { get; } = new CssBuilder();
-        protected CssBuilder ActionsCssBuilder { get; } = new CssBuilder();
+        [Parameter] 
+        public StringOrNumber MaxWidth { get; set; }
 
+        [Parameter] 
+        public StringOrNumber MinWidth { get; set; }
 
-        [Parameter]
-        public bool Bordered { get; set; } = false;
+        [Parameter] 
+        public bool Outlined { get; set; }
 
-        [Parameter]
-        public RenderFragment Cover { get; set; }
-
-        [Parameter]
-        public RenderFragment Title { get; set; }
-
-        [Parameter]
-        public RenderFragment SubTitle { get; set; }
-
-        [Parameter]
-        public RenderFragment Text { get; set; }
-
-        [Parameter]
-        public RenderFragment Actions { get; set; }
-
-
+        [Parameter] 
+        public RenderFragment ChildContent { get; set; }
     }
 }

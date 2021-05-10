@@ -1,0 +1,14 @@
+﻿@namespace BlazorComponent
+@inherits BDomComponentBase
+
+<div class="@CssProvider.GetClass(this)" id="@Id">
+    <div @onclick="Click" @onmouseover="MouseOver"
+         @onmouseleave="MouseOut" @ref="Ref" style="@CssProvider.GetStyle(this,"slot")">
+        @Slot
+        <SlotComponent Description="SlotProvider.GetSlot<BPopover>()">
+            @ChildContent
+        </SlotComponent>
+    </div>
+
+    <SlotComponent Description="SlotProvider.GetSlot<BOverlay>()"></SlotComponent>
+</div>
