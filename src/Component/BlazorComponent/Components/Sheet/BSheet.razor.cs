@@ -24,10 +24,5 @@ namespace BlazorComponent
         //REVIEW: What's this?
         [Parameter]
         public bool OnContextmenuPreventDefault { get; set; }
-
-        protected virtual Task HandleOnClick(MouseEventArgs args)
-        {
-            return Task.CompletedTask;
-        }
     }
 }

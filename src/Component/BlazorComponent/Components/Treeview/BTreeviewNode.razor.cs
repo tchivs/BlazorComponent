@@ -73,6 +73,8 @@ namespace BlazorComponent
         [Parameter]
         public Func<TItem, TKey> ItemKey { get; set; }
 
+        protected bool HasLoaded { get; set; }
+
         public List<TItem> ComputedChildren
         {
             get
@@ -93,7 +95,7 @@ namespace BlazorComponent
         public bool HasChildren => Children != null && (Children.Count > 0 || LoadChildren != null);
 
         public bool Disabled => (ItemDisabled != null && ItemDisabled.Invoke(Item)) || (ParentIsDisabled && SelectionType == SelectionType.Leaf);
-        
+
         public bool IsActive => Key != null && Treeview.IsActive(Key);
 
         public bool IsIndeterminate => Treeview.IsIndeterminate(Key);
@@ -101,7 +103,7 @@ namespace BlazorComponent
         public bool IsLeaf => Children != null;
 
         public bool IsSelected => Treeview.IsSelected(Key);
-        
+
         public string Text => ItemText?.Invoke(Item);
 
         public string ComputedIcon
@@ -141,23 +143,15 @@ namespace BlazorComponent
             }
         }
 
-        private bool _hasLoaded;
-
         public async Task CheckChildrenAsync()
         {
-            if (Children == null || Children.Any() || LoadChildren == null || _hasLoaded) return;
+            if (Children == null || Children.Any() || LoadChildren == null || HasLoaded) return;
 
             IsLoading = true;
+            await LoadChildren(Item);
 
-            try
-            {
-                await LoadChildren(Item);
-            }
-            finally
-            {
-                IsLoading = false;
-                _hasLoaded = true;
-            }
+            IsLoading = false;
+            HasLoaded = true;
         }
 
         public async Task OpenAsync()
