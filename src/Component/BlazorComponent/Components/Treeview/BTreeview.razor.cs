@@ -85,6 +85,9 @@ namespace BlazorComponent
         [Parameter]
         public EventCallback<List<TItem>> OnOpenUpdate { get; set; }
 
+        [Parameter]
+        public Func<TItem, string, Func<TItem, string>, bool> Filter { get; set; }
+
         public List<TItem> ComputedItems
         {
             get
@@ -372,7 +375,8 @@ namespace BlazorComponent
 
         private bool FilterTreeItems(TItem item, ref List<TKey> excluded)
         {
-            if (FilterTreeItem(item, Search, ItemText))
+            var filterTreeItem = Filter ?? FilterTreeItem;
+            if (filterTreeItem(item, Search, ItemText))
             {
                 return true;
             }
