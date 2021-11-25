@@ -221,13 +221,6 @@ namespace BlazorComponent
             }
 
             Active = _oldActive;
-
-            if (OnActiveUpdate.HasDelegate)
-            {
-                var active = Nodes.Values.Where(r => r.IsActive).Select(r => r.Item).ToList();
-                _ = OnActiveUpdate.InvokeAsync(active);
-            }
-
             if (ActiveChanged.HasDelegate)
             {
                 await ActiveChanged.InvokeAsync(Active);
@@ -235,6 +228,13 @@ namespace BlazorComponent
             else
             {
                 StateHasChanged();
+            }
+
+            //REVIEW: We may render twice
+            if (OnActiveUpdate.HasDelegate)
+            {
+                var active = Nodes.Values.Where(r => r.IsActive).Select(r => r.Item).ToList();
+                _ = OnActiveUpdate.InvokeAsync(active);
             }
         }
 
@@ -256,16 +256,20 @@ namespace BlazorComponent
             }
 
             Open = _oldOpen;
+            if (OpenChanged.HasDelegate)
+            {
+                await OpenChanged.InvokeAsync(Open);
+            }
+            else
+            {
+                StateHasChanged();
+            }
 
+            //REVIEW: We may render twice
             if (OnOpenUpdate.HasDelegate)
             {
                 var open = Nodes.Values.Where(r => r.IsOpen).Select(r => r.Item).ToList();
                 _ = OnOpenUpdate.InvokeAsync(open);
-            }
-
-            if (OpenChanged.HasDelegate)
-            {
-                await OpenChanged.InvokeAsync(Open);
             }
         }
 
@@ -299,13 +303,6 @@ namespace BlazorComponent
             }
 
             Value = _oldValue;
-
-            if (OnInput.HasDelegate)
-            {
-                var value = Nodes.Values.Where(r => r.IsSelected).Select(r => r.Item).ToList();
-                _ = OnInput.InvokeAsync(value);
-            }
-
             if (ValueChanged.HasDelegate)
             {
                 await ValueChanged.InvokeAsync(Value);
@@ -313,6 +310,13 @@ namespace BlazorComponent
             else
             {
                 StateHasChanged();
+            }
+
+            //REVIEW: We may render twice
+            if (OnInput.HasDelegate)
+            {
+                var selectedItems = Nodes.Values.Where(r => r.IsSelected).Select(r => r.Item).ToList();
+                _ = OnInput.InvokeAsync(selectedItems);
             }
         }
 

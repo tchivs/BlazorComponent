@@ -31,6 +31,7 @@ namespace BlazorComponent
         Task EmitActiveAsync();
 
         Task EmitOpenAsync();
+
         Task EmitSelectedAsync();
     }
 }
