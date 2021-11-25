@@ -26,6 +26,9 @@ namespace BlazorComponent
         public RenderFragment ChildContent { get; set; }
 
         [Parameter]
+        public bool Optional { get; set; }
+
+        [Parameter]
         public string SliderColor { get; set; }
 
         [Parameter]
@@ -122,8 +125,6 @@ namespace BlazorComponent
 
                 Slider = (height, left, right, top, width);
             }
-
-            Instance?.SetWidths();
 
             if (firstRender || _isModified)
             {
