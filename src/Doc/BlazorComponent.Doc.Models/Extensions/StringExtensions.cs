@@ -5,6 +5,11 @@ namespace BlazorComponent.Doc.Extensions;
 
 public static class StringExtensions
 {
+    public static string StructureUrl(this string str)
+    {
+        return str.Replace(" ", "-").ToLower();
+    }
+
     public static string HashSection(this string title)
     {
         title = title.ToLower();

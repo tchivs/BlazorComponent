@@ -207,8 +207,7 @@ namespace BlazorComponent.Doc.CLI.Commands
 
                 var categoryComponent = categoryDemoMenuList[lang];
                 var categoryStyle = categoryStyleMenuList[lang];
-
-
+                
                 var componentMenus = new List<DemoMenuItemModel>();
 
                 foreach (var component in categoryComponent)
@@ -219,7 +218,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                         Title = ConfigWrapper.Config.GenerateRule.Menus.First(menu => menu.Key == component.Key).Descriptions
                             .First(desc => desc.Lang == lang).Description,
                         Type = "component",
-                        Url = component.Key.ToLowerInvariant(),
+                        Url = component.Key.StructureUrl(),
                         Children = component.Value.OrderBy(x => x.Order).ToArray()
                     });
                 }
@@ -234,7 +233,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                         Title = ConfigWrapper.Config.GenerateRule.Menus.First(menu => menu.Key == style.Key).Descriptions
                             .First(desc => desc.Lang == lang).Description,
                         Type = "component",
-                        Url = style.Key.ToLowerInvariant(),
+                        Url = style.Key.StructureUrl(),
                         Children = style.Value.OrderBy(x => x.Order).ToArray()
                     });
                 }
@@ -322,7 +321,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                                     {
                                         Order = data["order"].ToObject<int>(),
                                         Title = titleItem["content"].ToString(),
-                                        Url = $"docs/{menuDir.Name}",
+                                        Url = $"docs/{menuDir.Name}".StructureUrl(),
                                         Icon = data["icon"].ToString(),
                                         Type = "menuItem",
                                         Children = GetSubMenuChildren(menuDir, titleItem["lang"].ToString()).OrderBy(r => r.Order)
@@ -337,6 +336,7 @@ namespace BlazorComponent.Doc.CLI.Commands
             else
             {
                 // 设置首页文档名为UI组件的一级导航的二级导航列表
+                // 同时影响menu.json和demos.json
 
                 var componentI18N = GetComponentI18N(directory);
                 foreach (var group in componentI18N.GroupBy(x => x.Value.Type))
@@ -348,13 +348,13 @@ namespace BlazorComponent.Doc.CLI.Commands
                         menu.Add(component.Key, new DemoMenuItemModel()
                         {
                             Order = ConfigWrapper.DocsNavOrder[group.Key],
-                            Title = group.Key, // TODO: 似乎无用处
+                            Title = group.Key,
                             Type = "itemGroup",
                             Children = group.Select(x => new DemoMenuItemModel()
                                 {
                                     Title = x.Value.Title,
                                     SubTitle = x.Value.Subtitle,
-                                    Url = $"{directory.Name.ToLowerInvariant()}/{x.Value.Title.ToLower()}",
+                                    Url = $"{directory.Name}/{x.Value.Title}".StructureUrl(),
                                     Type = "menuItem",
                                     Order = x.Value.Order,
                                     Cover = x.Value.Cover,
@@ -362,7 +362,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                                     {
                                         Title = y.Title,
                                         SubTitle = y.Subtitle,
-                                        Url = $"{directory.Name.ToLowerInvariant()}/{y.Title.ToLower()}",
+                                        Url = $"{directory.Name}/{y.Title}".StructureUrl(),
                                         Type = "menuItem",
                                         Order = y.Order,
                                         Cover = y.Cover,
@@ -401,7 +401,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                         {
                             Order = Convert.ToInt32(data["order"]),
                             Title = data["title"],
-                            Url = $"docs/{menuDir.Name}/{args[0]}",
+                            Url = $"docs/{menuDir.Name}/{args[0]}".StructureUrl(),
                             Type = "menuItem",
                             Contents = titles.Select(r => new ContentsItem
                             {

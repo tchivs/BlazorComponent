@@ -22,24 +22,171 @@ namespace BlazorComponent.Doc.CLI.Commands
 {
     public class GenerateApiJsonCommand : IAppCommand
     {
+        private static readonly Dictionary<string, string[]> _dic = new()
+        {
+            { "Avatar", new string[] { "Avatars" } },
+            { "Badge", new string[] { "Badges" } },
+            { "Banner", new string[] { "Banners" } },
+            { "Border", new string[] { "Borders" } },
+            { "Breadcrumbs", new string[] { "Breadcrumbs" } },
+            { "BreadcrumbsDivider", new string[] { "Breadcrumbs" } },
+            { "BreadcrumbsItem", new string[] { "Breadcrumbs" } },
+            { "Button", new string[] { "Buttons" } },
+            { "ButtonGroup", new string[] { "Button groups" } },
+            { "Calendar", new string[] { "Calendars" } },
+            { "CalendarDaily", new string[] { "Calendars" } },
+            { "CalendarMonthly", new string[] { "Calendars" } },
+            { "CalendarWeekly", new string[] { "Calendars" } },
+            { "Card", new string[] { "Cards" } },
+            { "CardActions", new string[] { "Cards" } },
+            { "CardSubtitle", new string[] { "Cards" } },
+            { "CardText", new string[] { "Cards" } },
+            { "CardTitle", new string[] { "Cards" } },
+            { "Cascader", new string[] { "Cascaders" } },
+            { "CascaderMenu", new string[] { "Cascaders" } },
+            { "CascaderSelectList", new string[] { "Cascaders" } },
+            { "CascaderSelectOption", new string[] { "Cascaders" } },
+            { "Checkbox", new string[] { "Checkboxes" } },
+            { "Chip", new string[] { "Chips" } },
+            { "ChipGroup", new string[] { "Chip groups" } },
+            { "Col", new string[] { "Grid system" } },
+            { "ColorPicker", new string[] { "Color pickers" } },
+            { "ColorPickerCanvas", new string[] { "Color pickers" } },
+            { "ColorPickerEdit", new string[] { "Color pickers" } },
+            { "ColorPickerPreview", new string[] { "Color pickers" } },
+            { "Container", new string[] { "Grid system" } },
+            { "DataFooter", new string[] { "Data iterators" } },
+            { "DataIterator", new string[] { "Data iterators" } },
+            { "DataTable", new string[] { "Data tables" } },
+            { "DataTableHeader", new string[] { "Data tables" } },
+            { "DataTableRow", new string[] { "Data tables" } },
+            { "DataTableRowGroup", new string[] { "Data tables" } },
+            { "DatePicker", new string[] { "Date pickers" } },
+            { "DatePickerDateTable", new string[] { "Date pickers" } },
+            { "DatePickerHeader", new string[] { "Date pickers" } },
+            { "DatePickerMonthTable", new string[] { "Date pickers" } },
+            { "DatePickerTable", new string[] { "Date pickers" } },
+            { "DatePickerTitle", new string[] { "Date pickers" } },
+            { "DatePickerYears", new string[] { "Date pickers" } },
+            { "Dialog", new string[] { "Dialogs" } },
+            { "Divider", new string[] { "Dividers" } },
+            { "ECharts", new string[] { "ECharts" } },
+            { "Message", new string[] { "Presets" } },
+            { "ExpansionPanel", new string[] { "Expansion panels" } },
+            { "ExpansionPanelContent", new string[] { "Expansion panels" } },
+            { "ExpansionPanelHeader", new string[] { "Expansion panels" } },
+            { "ExpansionPanels", new string[] { "Expansion panels" } },
+            { "FileInput", new string[] { "File inputs" } },
+            { "Footer", new string[] { "Footers" } },
+            { "Form", new string[] { "Forms" } },
+            { "Hover", new string[] { "Hover" } },
+            { "Icon", new string[] { "Icons" } },
+            { "Image", new string[] { "Images" } },
+            { "Input", new string[] { "Text fields" } },
+            { "Item", new string[] { "Item groups" } },
+            { "ItemGroup", new string[] { "Item groups" } },
+            { "Label", new string[] { "Text fields" } },
+            { "List", new string[] { "Lists" } },
+            { "ListGroup", new string[] { "Lists", "List item groups" } },
+            { "ListItem", new string[] { "Lists", "List item groups"  } },
+            { "ListItemAction", new string[] { "Lists", "List item groups" } },
+            { "ListItemActionText", new string[] { "Lists", "List item groups" } },
+            { "ListItemAvatar", new string[] { "Lists", "List item groups" } },
+            { "ListItemContent", new string[] { "Lists", "List item groups" } },
+            { "ListItemGroup", new string[] { "Lists", "List item groups" } },
+            { "ListItemIcon", new string[] { "Lists" } },
+            { "ListItemSubtitle", new string[] { "Lists", "List item groups" } },
+            { "ListItemTitle", new string[] { "Lists", "List item groups" } },
+            { "Main", new string[] { "Grid system" } },
+            { "Menu", new string[] { "Menus" } },
+            { "Messages", new string[] { "Messages" } },
+            { "NavigationDrawer", new string[] { "Navigation drawers" } },
+            { "Modal", new string[] { "Presets" } },
+            { "Overlay", new string[] { "Overlay" } },
+            { "Pagination", new string[] { "Pagination" } },
+            { "ProgressCircular", new string[] { "Progress circulars" } },
+            { "ProgressLinear", new string[] { "Progress linears" } },
+            { "Radio", new string[] { "Radio" } },
+            { "RadioGroup", new string[] { "Radio groups" } },
+            { "RangeSlider", new string[] { "Range sliders" } },
+            { "Rating", new string[] { "Ratings" } },
+            { "Responsive", new string[] { "Grid system" } },
+            { "Row", new string[] { "Grid system" } },
+            { "Select", new string[] { "Selects" } },
+            { "SelectList", new string[] { "Selects" } },
+            { "SelectOption", new string[] { "Selects" } },
+            { "Sheet", new string[] { "Sheets" } },
+            { "SimpleCheckbox", new string[] { "Checkboxes" } },
+            { "SimpleTable", new string[] { "Simple tables" } },
+            { "SkeletonLoader", new string[] { "Skeleton loaders" } },
+            { "SlideGroup", new string[] { "Slide groups" } },
+            { "SlideItem", new string[] { "Slide groups" } },
+            { "Slider", new string[] { "Sliders" } },
+            { "Snackbar", new string[] { "Snackbars" } },
+            { "Spacer", new string[] { "Grid system" } },
+            { "Stepper", new string[] { "Steppers" } },
+            { "StepperContent", new string[] { "Steppers" } },
+            { "StepperHeader", new string[] { "Steppers" } },
+            { "StepperItems", new string[] { "Steppers" } },
+            { "StepperStep", new string[] { "Steppers" } },
+            { "Subheader", new string[] { "Subheaders" } },
+            { "Switch", new string[] { "Switches" } },
+            { "SystemBar", new string[] { "System bars" } },
+            { "Tab", new string[] { "Tabs" } },
+            { "TabItem", new string[] { "Tabs" } },
+            { "Table", new string[] { "Data tables" } },
+            { "TableCol", new string[] { "Data tables" } },
+            { "TableFooter", new string[] { "Data tables" } },
+            { "TableFooterButton", new string[] { "Data tables" } },
+            { "TableHeader", new string[] { "Data tables" } },
+            { "TableLoading", new string[] { "Data tables" } },
+            { "Tabs", new string[] { "Tabs" } },
+            { "TabsBar", new string[] { "Tabs" } },
+            { "TabsItems", new string[] { "Tabs" } },
+            { "TabsSlider", new string[] { "Tabs" } },
+            { "Textarea", new string[] { "Textareas" } },
+            { "TextField", new string[] { "Text fields" } },
+            { "Timeline", new string[] { "Timelines" } },
+            { "TimelineItem", new string[] { "Timelines" } },
+            { "TimePicker", new string[] { "Timelines" } },
+            { "TimePickerClock", new string[] { "Timelines" } },
+            { "TimePickerTitle", new string[] { "Timelines" } },
+            { "Toolbar", new string[] { "Toolbars" } },
+            { "ToolbarItems", new string[] { "Toolbars" } },
+            { "ToolbarTitle", new string[] { "Toolbars" } },
+            { "Tooltip", new string[] { "Tooltips" } },
+            { "Treeview", new string[] { "Treeview" } },
+            { "TreeviewNode", new string[] { "Treeview" } },
+            { "Upload", new string[] { "Uploads" } },
+            { "VirtualScroll", new string[] { "Virtual scroller" } },
+            { "Window", new string[] { "Windows" } },
+            { "WindowItem", new string[] { "Windows" } },
+            { "Alert", new string[] { "Alerts" } },
+            { "AlertDismissButton", new string[] { "Alerts" } },
+            { "AlertIcon", new string[] { "Alerts" } },
+            { "App", new string[] { "Application" } },
+            { "AppBar", new string[] { "App bars" } },
+            { "AppBarNavIcon", new string[] { "App bars" } },
+            { "AppBarTitle", new string[] { "App bars" } },
+            { "Autocomplete", new string[] { "Autocompletes" } },
+        };
+
         public string Name => "api2json";
 
         public void Execute(CommandLineApplication command)
         {
             command.Description = "Generate json file for api";
             command.HelpOption();
-
             var assemblyDirArgument = command.Argument(
                 "assembly Path", "[Required] The Path of assembly file.");
 
             var outputArgument = command.Argument(
-                "output", "[Required] The directory where the json file to output");        
-          
+                "output", "[Required] The directory where the json file to output");
+
             command.OnExecute(() =>
             {
                 string assemblyPath = assemblyDirArgument.Value;
                 string output = outputArgument.Value;
-
                 if (string.IsNullOrEmpty(assemblyPath) || !File.Exists(assemblyPath))
                 {
                     Console.WriteLine("Invalid assemblyPath.");
@@ -50,29 +197,46 @@ namespace BlazorComponent.Doc.CLI.Commands
                 {
                     output = "./";
                 }
-                GenerateApiFiles(output,new[] { "zh-CN", "en-US" });
 
+                GenerateApiFiles(output,  new[]
+                {
+                    "zh-CN", "en-US"
+                });
                 return 0;
-            });         
+            });
         }
 
-        void GenerateApiFiles(string output,string[] languages)
+        void GenerateApiFiles(string output, string[] languages)
         {
-            var assembly = typeof(MApp).Assembly;//Assembly.LoadFile(assemblyPath);
+            var assembly = typeof(MApp).Assembly; //Assembly.LoadFile(assemblyPath);
             var ComponentBaseType = typeof(ComponentBase);
             var componentTypes = assembly.GetTypes().Where(type => ComponentBaseType.IsAssignableFrom(type) && type.Name.StartsWith("M"));
             var apis = new List<Api>();
 
             foreach (var componentType in componentTypes)
             {
-                var paramterProps = componentType.GetProperties().Where(prop => prop.CustomAttributes.Any(attribute => attribute.AttributeType == typeof(ParameterAttribute)));
-                var contentProps = paramterProps.Where(prop => prop.PropertyType == typeof(RenderFragment) || (prop.PropertyType.IsGenericType && prop.PropertyType == typeof(RenderFragment<>).MakeGenericType(prop.PropertyType.GenericTypeArguments[0])));
-                var eventProps = paramterProps.Where(prop => prop.PropertyType == typeof(EventCallback) || (prop.PropertyType.IsGenericType && prop.PropertyType == typeof(EventCallback<>).MakeGenericType(prop.PropertyType.GenericTypeArguments[0])));
-                var defaultProps = paramterProps.Where(props => contentProps.Any(cprops => cprops == props) is false && eventProps.Any(eprops => eprops == props) is false);
+                var paramterProps = componentType.GetProperties().Where(prop =>
+                    prop.CustomAttributes.Any(attribute => attribute.AttributeType == typeof(ParameterAttribute)));
+                var contentProps = paramterProps.Where(prop => prop.PropertyType == typeof(RenderFragment) || (prop.PropertyType.IsGenericType &&
+                    prop.PropertyType == typeof(RenderFragment<>).MakeGenericType(prop.PropertyType.GenericTypeArguments[0])));
+                var eventProps = paramterProps.Where(prop => prop.PropertyType == typeof(EventCallback) || (prop.PropertyType.IsGenericType &&
+                    prop.PropertyType == typeof(EventCallback<>).MakeGenericType(prop.PropertyType.GenericTypeArguments[0])));
+                var defaultProps = paramterProps.Where(props =>
+                    contentProps.Any(cprops => cprops == props) is false && eventProps.Any(eprops => eprops == props) is false);
+
+                var title = GetComponentName(componentType);
+
+                if (!_dic.ContainsKey(title))
+                {
+                    continue;
+                }
+
+                _dic.TryGetValue(title, out var components);
 
                 var api = new Api
                 {
-                    Components = new[] { GetComponentName(componentType) },
+                    Title = title,
+                    Components = components,
                     Props = defaultProps.Where(prop => IgnorePrpps(prop.Name)).Select(prop => new Prop
                     {
                         Name = prop.Name,
@@ -106,15 +270,17 @@ namespace BlazorComponent.Doc.CLI.Commands
                 };
 
                 var basepath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                var propDescriptionMap = JsonSerializer.Deserialize<string[][]>(File.ReadAllText($"{basepath}/ApiSettings/propDefaultDescription.{language}.json"))
-                                                        .ToDictionary(prop => prop[0], prop => prop[1]);
+                var propDescriptionMap = JsonSerializer
+                    .Deserialize<string[][]>(File.ReadAllText($"{basepath}/ApiSettings/propDefaultDescription.{language}.json"))
+                    .ToDictionary(prop => prop[0], prop => prop[1]);
 
-                var contentDescriptionMap = JsonSerializer.Deserialize<string[][]>(File.ReadAllText($"{basepath}/ApiSettings/contentDefaultDescription.{language}.json"))
-                                                        .ToDictionary(prop => prop[0], prop => prop[1]);
+                var contentDescriptionMap = JsonSerializer
+                    .Deserialize<string[][]>(File.ReadAllText($"{basepath}/ApiSettings/contentDefaultDescription.{language}.json"))
+                    .ToDictionary(prop => prop[0], prop => prop[1]);
 
                 foreach (var api in apis)
                 {
-                    var file = files.FirstOrDefault(f => f.Contains($"M{api.Components[0]}.{language}.json"));
+                    var file = files.FirstOrDefault(f => f.Contains($"M{api.Title}.{language}.json"));
                     if (file is not null)
                     {
                         var oldApi = JsonSerializer.Deserialize<Api>(File.ReadAllText(file));
@@ -128,18 +294,19 @@ namespace BlazorComponent.Doc.CLI.Commands
                             }
                         }
                     }
-                    else file = $"{output}/M{api.Components[0]}.{language}.json";
+                    else file = $"{output}/M{api.Title}.{language}.json";
 
                     foreach (var prop in api.Props)
                     {
-                        if(propDescriptionMap.ContainsKey(prop.Name))
+                        if (propDescriptionMap.ContainsKey(prop.Name))
                         {
                             prop.Description = propDescriptionMap[prop.Name];
                         }
                     }
+
                     foreach (var content in api.Contents)
                     {
-                        if(contentDescriptionMap.ContainsKey(content.Name))
+                        if (contentDescriptionMap.ContainsKey(content.Name))
                         {
                             content.Description = contentDescriptionMap[content.Name];
                         }
@@ -148,9 +315,9 @@ namespace BlazorComponent.Doc.CLI.Commands
                     File.WriteAllText(file, JsonSerializer.Serialize(api, jsonOption), Encoding.UTF8);
 
                     //md
-                    var mdFile = $"{output}/M{api.Components[0]}.{language}.md";
+                    var mdFile = $"{output}/M{api.Title}.{language}.md";
                     var mdContent = JsonSerializer.Deserialize<List<string>>(File.ReadAllText($"{basepath}/ApiSettings/mdContent.{language}.json"));
-                    mdContent[mdContent.IndexOf("[title]")] = $"title: {api.Components[0]}";
+                    mdContent[mdContent.IndexOf("[title]")] = $"title: {api.Title}";
                     File.WriteAllLines(mdFile, mdContent);
                 }
             }
@@ -181,6 +348,8 @@ namespace BlazorComponent.Doc.CLI.Commands
 
     public class Api
     {
+        public string Title { get; set; }
+
         public string[] Components { get; set; }
 
         public Prop[] Props { get; set; }
@@ -213,5 +382,3 @@ namespace BlazorComponent.Doc.CLI.Commands
         public string Description { get; set; }
     }
 }
-
-
