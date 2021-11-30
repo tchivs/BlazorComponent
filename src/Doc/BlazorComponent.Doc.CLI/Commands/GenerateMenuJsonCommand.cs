@@ -353,7 +353,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                             Children = group.Select(x => new DemoMenuItemModel()
                                 {
                                     Title = x.Value.Title,
-                                    SubTitle = x.Value.SubTitle,
+                                    SubTitle = x.Value.Subtitle,
                                     Url = $"{directory.Name.ToLowerInvariant()}/{x.Value.Title.ToLower()}",
                                     Type = "menuItem",
                                     Order = x.Value.Order,
@@ -361,7 +361,7 @@ namespace BlazorComponent.Doc.CLI.Commands
                                     Children = x.Value.Children.Select(y => new DemoMenuItemModel()
                                     {
                                         Title = y.Title,
-                                        SubTitle = y.SubTitle,
+                                        SubTitle = y.Subtitle,
                                         Url = $"{directory.Name.ToLowerInvariant()}/{y.Title.ToLower()}",
                                         Type = "menuItem",
                                         Order = y.Order,
@@ -470,18 +470,12 @@ namespace BlazorComponent.Doc.CLI.Commands
                 foreach (FileSystemInfo docItem in (docDir as DirectoryInfo).GetFileSystemInfos().OrderBy(r => r.Name))
                 {
                     var language = docItem.Name.Replace("index.", "").Replace(docItem.Extension, "");
-                    string content = File.ReadAllText(docItem.FullName);
-                    var (meta, desc, _) = DocWrapper.ParseDemoDoc(content);
+                    
+                    var content = File.ReadAllText(docItem.FullName);
+                    
+                    var (matter, desc, _) = DocWrapper.ParseDemoDoc(content);
 
-                    var model = new DemoComponentModel()
-                    {
-                        Title = meta["title"],
-                        SubTitle = meta.TryGetValue("subtitle", out string subtitle) ? subtitle : null,
-                        Type = meta["type"],
-                        Desc = desc,
-                        Cols = meta.TryGetValue("cols", out var cols) ? int.Parse(cols) : (int?)null,
-                        Cover = meta.TryGetValue("cover", out var cover) ? cover : null,
-                    };
+                    var model = new DemoComponentModel(matter, desc);
 
                     dict[language] = model;
                 }
