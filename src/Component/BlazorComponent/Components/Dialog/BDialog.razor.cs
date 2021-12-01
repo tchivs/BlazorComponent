@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
@@ -30,6 +31,12 @@ namespace BlazorComponent
 
         [Parameter]
         public RenderFragment ChildContent { get; set; }
+
+        [Parameter]
+        public bool Fullscreen { get; set; }
+
+        [Parameter]
+        public bool HideOverlay { get; set; }
 
         [Parameter]
         public StringNumber MaxWidth { get; set; }
@@ -63,14 +70,29 @@ namespace BlazorComponent
         {
             await base.OnAfterRenderAsync(firstRender);
 
+            await ShowLazyContent();
+            
             if (_valueChangedToTrue)
             {
                 ZIndex = await ActiveZIndex();
+                await Show();
                 StateHasChanged();
                 _valueChangedToTrue = false;
             }
+        }
 
-            await ShowLazyContent();
+        protected bool ShowOverlay => !Fullscreen && !HideOverlay;
+
+        private async Task Show()
+        {
+            // TODO: previousActiveElement
+            // https://github.com/vuetifyjs/vuetify/blob/master/packages/vuetify/src/components/VDialog/VDialog.ts#L185
+            
+            var contains = await JsInvokeAsync<bool?>(JsInteropConstants.ContainsActiveElement, ContentRef);
+            if (contains.HasValue && !contains.Value)
+            {
+                await JsInvokeAsync(JsInteropConstants.Focus, ContentRef);
+            }
         }
 
         protected override async Task Close()
@@ -97,7 +119,7 @@ namespace BlazorComponent
 
         private async Task<int> GetMaxZIndex()
         {
-            var maxZindex = await JsInvokeAsync<int>(JsInteropConstants.GetMenuOrDialogMaxZIndex, new List<ElementReference> {ContentRef}, Ref);
+            var maxZindex = await JsInvokeAsync<int>(JsInteropConstants.GetMenuOrDialogMaxZIndex, new List<ElementReference> { ContentRef }, Ref);
 
             return maxZindex > _stackMinZIndex ? maxZindex : _stackMinZIndex;
         }
