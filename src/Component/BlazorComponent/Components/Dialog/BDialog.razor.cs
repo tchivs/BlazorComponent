@@ -11,8 +11,9 @@ namespace BlazorComponent
 {
     public partial class BDialog : BActivatable, IAsyncDisposable
     {
+        private bool _isHasOverlayElement;
+        private bool _valueChangedToTrue;
         private int _stackMinZIndex = 200;
-        private bool _isNotFirstRender = true;
 
         protected virtual string AttachSelector { get; set; }
 
@@ -42,28 +43,18 @@ namespace BlazorComponent
         [Parameter]
         public StringNumber Width { get; set; }
 
-        private bool _isHasOverlayElement;
-
         public override bool Value
         {
             get => base.Value;
             set
             {
+                _valueChangedToTrue = base.Value != value && value;
+
                 base.Value = value;
+
                 if (value)
                 {
                     _isHasOverlayElement = true;
-                }
-            }
-        }
-
-        protected override async Task OnParametersSetAsync()
-        {
-            if (!_isNotFirstRender)
-            {
-                if (ZIndex == default)
-                {
-                    ZIndex = await ActiveZIndex();
                 }
             }
         }
@@ -72,9 +63,11 @@ namespace BlazorComponent
         {
             await base.OnAfterRenderAsync(firstRender);
 
-            if (firstRender)
+            if (_valueChangedToTrue)
             {
-                _isNotFirstRender = false;
+                ZIndex = await ActiveZIndex();
+                StateHasChanged();
+                _valueChangedToTrue = false;
             }
 
             await ShowLazyContent();
