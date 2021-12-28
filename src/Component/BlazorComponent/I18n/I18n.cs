@@ -35,15 +35,6 @@ namespace BlazorComponent.Components
             _i18nCache.AddOrUpdate(language, langMap, (name, original) => langMap);
         }
 
-        public static void AddLang(string language, string languageSettingsFile, bool isDefaultLanguage = false)
-        {
-            var languageSettings = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(languageSettingsFile));
-            if (languageSettings is not null)
-            {
-                AddLang(language, languageSettings, isDefaultLanguage);
-            }
-        }
-
         public static IReadOnlyDictionary<string, string>? GetLang(string language)
         {
             return _i18nCache.GetValueOrDefault(language);
