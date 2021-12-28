@@ -27,6 +27,8 @@ namespace BlazorComponent.Components
             }
         }
 
+        public static string? GloablLanguage { get; set; }
+
         public void Initialization(IRequestCookieCollection cookies)
         {
             _language = cookies[LanguageCookieKey];
