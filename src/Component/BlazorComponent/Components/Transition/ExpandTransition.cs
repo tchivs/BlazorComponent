@@ -15,7 +15,7 @@ namespace BlazorComponent
 
         protected virtual bool X { get; }
 
-        protected double Size { get; set; }
+        protected double? Size { get; set; }
 
         protected string SizeProp => X ? "width" : "height";
 
@@ -26,7 +26,7 @@ namespace BlazorComponent
             StyleBuilder
                 .AddIf(() => $"{SizeProp}:0px", () => State == TransitionState.Enter || State == TransitionState.LeaveTo)
                 .AddIf("overflow:hidden", () => State != TransitionState.None)
-                .AddIf(() => $"{SizeProp}:{Size}px", () => State == TransitionState.EnterTo || State == TransitionState.Leave);
+                .AddIf(() => $"{SizeProp}:{Size}px", () => (State == TransitionState.EnterTo || State == TransitionState.Leave) && Size != null);
         }
 
         protected override void OnParametersSet()
@@ -37,7 +37,7 @@ namespace BlazorComponent
         protected override async Task OnBeforeEnterAsync()
         {
             var prop = SizeProp[..1].ToUpper() + SizeProp[1..];
-            var el = Document.QuerySelector(FirstElement.Reference);
+            var el = Document.GetElementByReference(FirstElement.Reference);
             Size = await el.GetSizeAsync(prop);
 
             await base.OnBeforeEnterAsync();
@@ -46,7 +46,7 @@ namespace BlazorComponent
         protected override async Task OnBeforeLeaveAsync()
         {
             var prop = SizeProp[..1].ToUpper() + SizeProp[1..];
-            var el = Document.QuerySelector(FirstElement.Reference);
+            var el = Document.GetElementByReference(FirstElement.Reference);
             Size = await el.GetSizeAsync(prop);
 
             await base.OnBeforeLeaveAsync();

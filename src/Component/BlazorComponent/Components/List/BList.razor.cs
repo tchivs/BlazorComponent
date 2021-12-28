@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace BlazorComponent
 {
-    public partial class BList : BDomComponentBase, ILinkable
+    public partial class BList : BDomComponentBase
     {
         // TODO: add cascading value in Menu
         [CascadingParameter(Name = "IsInMenu")]
@@ -25,8 +25,6 @@ namespace BlazorComponent
 
         [Parameter]
         public virtual string Tag { get; set; } = "div";
-
-        public List<BListItem> Items { get; } = new();
 
         protected List<BListGroup> Groups { get; } = new();
 
@@ -58,10 +56,6 @@ namespace BlazorComponent
             }
 
             StateHasChanged();
-        }
-
-        public virtual void Select(BListItem mListItem)
-        {
         }
     }
 }

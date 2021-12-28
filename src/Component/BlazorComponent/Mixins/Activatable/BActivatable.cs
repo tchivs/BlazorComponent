@@ -17,9 +17,6 @@ public abstract class BActivatable : BDelayable, IActivatable
 
     private ElementReference? _externalActivatorRef;
 
-    private RenderFragment<ActivatorProps> _activatorContent;
-    private bool _activatorContentChanged;
-
     private Dictionary<string, EventCallback<FocusEventArgs>> _focusListeners = new();
     private Dictionary<string, EventCallback<KeyboardEventArgs>> _keyboardListeners = new();
     private Dictionary<string, (EventCallback<MouseEventArgs> listener, EventListenerActions actions)> _mouseListeners = new();
@@ -32,7 +29,7 @@ public abstract class BActivatable : BDelayable, IActivatable
     private string InternalActivatorSelector => $"[{_activatorId}]";
 
     protected string ActivatorSelector => _externalActivatorRef.HasValue
-        ? Document.QuerySelector(_externalActivatorRef.Value).Selector
+        ? Document.GetElementByReference(_externalActivatorRef.Value).Selector
         : InternalActivatorSelector;
 
     protected HtmlElement ActivatorElement { get; private set; }
@@ -68,27 +65,13 @@ public abstract class BActivatable : BDelayable, IActivatable
     public Document Document { get; set; }
 
     [Parameter]
-    public RenderFragment<ActivatorProps> ActivatorContent
-    {
-        get => _activatorContent;
-        set
-        {
-            _activatorContent = value;
-            _activatorContentChanged = true;
-        }
-    }
+    public RenderFragment<ActivatorProps> ActivatorContent { get; set; }
 
     [Parameter]
     public bool Disabled
     {
-        get
-        {
-            return GetValue<bool>();
-        }
-        set
-        {
-            SetValue(value);
-        }
+        get => GetValue<bool>();
+        set => SetValue(value);
     }
 
     [Parameter]
@@ -120,9 +103,8 @@ public abstract class BActivatable : BDelayable, IActivatable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender || _activatorContentChanged)
+        if (firstRender)
         {
-            _activatorContentChanged = false;
             await ResetActivator();
         }
     }
@@ -255,7 +237,7 @@ public abstract class BActivatable : BDelayable, IActivatable
         }
         else if (_externalActivatorRef != null)
         {
-            ActivatorElement = Document.QuerySelector(_externalActivatorRef.Value);
+            ActivatorElement = Document.GetElementByReference(_externalActivatorRef.Value);
         }
 
         return ActivatorElement;

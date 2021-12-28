@@ -1,4 +1,5 @@
-﻿using BlazorComponent.Web;
+﻿using System.Runtime.CompilerServices;
+using BlazorComponent.Web;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -7,7 +8,7 @@ namespace BlazorComponent;
 public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
 {
     private const int BROWSER_RENDER_INTERVAL = 16;
-    
+
     private readonly int _stackMinZIndex = 6;
 
     private bool _delayIsActive;
@@ -16,6 +17,7 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
     private double _absoluteY;
     private Web.Element _documentElement;
     private bool _hasWindow;
+    protected bool _showContentCompleted;
     private Window _window;
 
     protected(Position activator, Position content) Dimensions = new(new Position(), new Position());
@@ -114,14 +116,9 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
 
             if (_delayIsActive == value) return;
 
-            if (value)
-            {
-                _ = CallActivate(() => _delayIsActive = true);
-            }
-            else
-            {
-                _ = CallDeactivate(() => _delayIsActive = false);
-            }
+            _ = value
+                ? CallActivate(() => _delayIsActive = true)
+                : CallDeactivate(() => _delayIsActive = false);
         }
     }
 
@@ -197,6 +194,18 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
     public bool Top { get; set; }
 
     [Parameter]
+    public override bool Value
+    {
+        get => IsActive;
+        set
+        {
+            _ = ShowLazyContent();
+
+            IsActive = value;
+        }
+    }
+
+    [Parameter]
     public StringNumber ZIndex { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -214,22 +223,26 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
             }
         }
 
-        if (!ShowContent && Value)
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    protected virtual async Task ShowLazyContent()
+    {
+        if (!ShowContent)
         {
+            _showContentCompleted = false;
+
             ShowContent = true;
-            Value = false;
 
             await InvokeStateHasChangedAsync();
             await Task.Delay(BROWSER_RENDER_INTERVAL);
 
             await AfterShowContent();
-            Value = true;
-
             await MoveContentTo();
             await UpdateDimensions();
-        }
 
-        await base.OnAfterRenderAsync(firstRender);
+            _showContentCompleted = true;
+        }
     }
 
     protected virtual Task AfterShowContent()
@@ -332,40 +345,80 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    protected override Dictionary<string, (EventCallback<MouseEventArgs>, EventListenerActions)> GenActivatorMouseListeners()
+    protected override Dictionary<string, (EventCallback<MouseEventArgs> listener, EventListenerActions actions)> GenActivatorMouseListeners()
     {
         var listeners = base.GenActivatorMouseListeners();
 
-        var onClick = EventCallback<MouseEventArgs>.Empty;
-        EventListenerActions actions = null;
-
         if (listeners.ContainsKey("click"))
         {
-            onClick = listeners["click"].listener;
-            actions = listeners["click"].actions;
+            var onClick = listeners["click"].listener;
+            var actions = listeners["click"].actions;
+
+            listeners["click"] = (CreateEventCallback<MouseEventArgs>(async e =>
+            {
+                await ShowLazyContent();
+
+                if (OpenOnClick && onClick.HasDelegate)
+                {
+                    await onClick.InvokeAsync(e);
+                }
+
+                _absoluteX = e.ClientX;
+                _absoluteY = e.ClientY;
+            }), actions);
         }
 
-        listeners["click"] = (CreateEventCallback<MouseEventArgs>(e =>
+        if (listeners.ContainsKey("mouseenter"))
         {
-            if (OpenOnClick && onClick.HasDelegate)
-            {
-                onClick.InvokeAsync(e);
-            }
+            var cb = listeners["mouseenter"].listener;
+            var actions = listeners["mouseenter"].actions;
 
-            _absoluteX = e.ClientX;
-            _absoluteY = e.ClientY;
-        }), actions);
+            listeners["mouseenter"] = (CreateEventCallback<MouseEventArgs>(async e =>
+            {
+                await ShowLazyContent();
+
+                if (cb.HasDelegate)
+                {
+                    await cb.InvokeAsync(e);
+                }
+            }), actions);
+        }
 
         if (listeners.ContainsKey("mouseleave"))
         {
+            var cb = listeners["mouseleave"].listener;
+            var actions = listeners["mouseleave"].actions;
+
             // ContentRef is null if use the feature ShowLazyContent
             if (ContentRef.Context != null)
             {
-                listeners["mouseleave"] = (
-                    listeners["mouseleave"].listener,
-                    new EventListenerActions(Document.QuerySelector(ContentRef).Selector)
-                );
+                if (actions == null)
+                {
+                    actions = new EventListenerActions(Document.GetElementByReference(ContentRef).Selector);
+                }
+                else
+                {
+                    actions.RelatedTarget = Document.GetElementByReference(ContentRef).Selector;
+                }
             }
+
+            listeners["mouseleave"] = (CreateEventCallback<MouseEventArgs>(async e =>
+            {
+                while (!_showContentCompleted)
+                {
+                    await Task.Delay(16);
+                }
+
+                while (!Value)
+                {
+                    await Task.Delay(16);
+                }
+
+                if (cb.HasDelegate)
+                {
+                    await cb.InvokeAsync(e);
+                }
+            }), actions);
         }
 
         return listeners;
@@ -463,7 +516,7 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
             }
         }
 
-        var contentElement = Document.QuerySelector(ContentRef);
+        var contentElement = Document.GetElementByReference(ContentRef);
         Dimensions.content = await Measure(contentElement);
 
         lazySetter?.Invoke();
@@ -508,18 +561,25 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
 
     private async Task<int> GetMaxZIndex()
     {
-        var maxZindex = await JsInvokeAsync<int>(JsInteropConstants.GetMenuOrDialogMaxZIndex, new List<ElementReference> {ContentRef}, Ref);
+        var maxZindex = await JsInvokeAsync<int>(JsInteropConstants.GetMenuOrDialogMaxZIndex, new List<ElementReference> { ContentRef }, Ref);
 
         return maxZindex > _stackMinZIndex ? maxZindex : _stackMinZIndex;
     }
 
-    private HtmlElement GetContent() => Document.QuerySelector(ContentRef);
+    private HtmlElement GetContent() => Document.GetElementByReference(ContentRef);
 
-    protected async Task DelContentFrom()
+    private async Task DeleteContent()
     {
-        if (ContentRef.Context != null)
+        try
         {
-            await JsInvokeAsync(JsInteropConstants.DelElementFrom, ContentRef, AttachedSelector);
+            if (ContentRef.Context != null)
+            {
+                await JsInvokeAsync(JsInteropConstants.DelElementFrom, ContentRef, AttachedSelector);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
         }
     }
 
@@ -538,10 +598,11 @@ public abstract class BMenuable : BActivatable, IMenuable, IAsyncDisposable
                 ActivatorSelector
             };
 
-            await JsInvokeAsync(JsInteropConstants.RemoveOutsideClickEventListener, selectors);
+
+            _ = JsInvokeAsync(JsInteropConstants.RemoveOutsideClickEventListener, selectors);
         }
 
-        await DelContentFrom();
+        await DeleteContent();
 
         GC.SuppressFinalize(this);
     }
