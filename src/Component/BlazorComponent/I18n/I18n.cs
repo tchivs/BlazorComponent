@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace BlazorComponent.Components
+namespace BlazorComponent.I18n
 {
     public class I18n
     {
