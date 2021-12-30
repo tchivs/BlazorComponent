@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace BlazorComponent.Components
+namespace BlazorComponent.I18n
 {
     public class I18nConfig
     {
@@ -32,6 +32,14 @@ namespace BlazorComponent.Components
         public void Initialization(IRequestCookieCollection cookies)
         {
             _language = cookies[LanguageCookieKey];
+        }
+
+        public async Task Initialization()
+        {
+            if(_cookieStorage is not null)
+            {
+                _language = await _cookieStorage.GetCookie(LanguageCookieKey);
+            }            
         }
 
         public void Bind(I18nConfig i18NConfig)

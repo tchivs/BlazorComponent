@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace BlazorComponent.Components
+namespace BlazorComponent.I18n
 {
     public class CookieMiddleware
     {
