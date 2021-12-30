@@ -135,15 +135,13 @@ namespace BlazorComponent
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                // ignored
             }
         }
 
         public async ValueTask DisposeAsync()
         {
             await DeleteContent();
-            
-            GC.SuppressFinalize(this);
         }
     }
 }
