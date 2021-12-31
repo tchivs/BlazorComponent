@@ -28,7 +28,7 @@ namespace BlazorComponent.I18n
             }
             catch
             {
-                
+
             }
         }
     }

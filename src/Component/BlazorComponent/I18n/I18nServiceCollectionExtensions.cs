@@ -32,67 +32,61 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddMasaI18n(this IServiceCollection services, string langugeDirectory, string? defaultLanguage = null)
+        /// <summary>
+        /// Add MasaI18n service according to the physical path of the folder where the i18n resource file is located
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="languageDirectory">i18n resource folder physical path,i18n resource file name will be used as language name</param>
+        /// <param name="defaultLanguage"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddMasaI18nForServer(this IServiceCollection services, string languageDirectory, string? defaultLanguage = null)
         {
-            var files = Directory.GetFiles(Path.Combine(_baseUrl, langugeDirectory));
-            var languageMap=new List<(string language, Dictionary<string, string>)>();
+            var files = Directory.GetFiles(Path.Combine(_baseUrl, languageDirectory));
+            var languageMap = new List<(string language, Dictionary<string, string>)>();
             foreach (var filePath in files)
             {
-                var language = Path.GetFileNameWithoutExtension(filePath); 
+                var language = Path.GetFileNameWithoutExtension(filePath);
                 var map = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(_baseUrl, filePath)));
-                languageMap.Add((language,map));
+                languageMap.Add((language, map));
             }
             services.AddMasaI18n(languageMap, defaultLanguage);
 
             return services;
         }
 
-        public static IServiceCollection AddMasaI18n(this IServiceCollection services, IEnumerable<LanguageSetting> languageSettings)
+        public static IServiceCollection AddMasaI18nForServer(this IServiceCollection services, LanguageConfig languageConfig)
         {
-            var languageMap = languageSettings.Select(setting => (setting.Value, JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(setting.FilePath))));
-            services.AddMasaI18n(languageMap, languageSettings.FirstOrDefault(setting => setting.IsDefaultLanguage)?.Value);
+            var languageMap = languageConfig.Languages.Select(language => (language.Value, JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(language.FilePath))));
+            services.AddMasaI18n(languageMap, languageConfig.DefaultLanguage);
 
             return services;
         }
 
-        public static IServiceCollection AddMasaI18nWithSeetingFile(this IServiceCollection services, string langugeSettingFilePath)
+        public static IServiceCollection AddMasaI18nForServer(this IServiceCollection services, string languageConfigFilePath)
         {
-            var languageSettings = JsonSerializer.Deserialize<List<LanguageSetting>>(File.ReadAllText(Path.Combine(_baseUrl, langugeSettingFilePath))) ?? throw new Exception("Failed to read i18n josn file data!");
-            services.AddMasaI18n(languageSettings);
+            var languageConfig = JsonSerializer.Deserialize<LanguageConfig>(File.ReadAllText(Path.Combine(_baseUrl, languageConfigFilePath))) ?? throw new Exception("Failed to read i18n jsonn file data!");
+            services.AddMasaI18nForServer(languageConfig);
 
             return services;
         }
 
-        /// <summary>
-        /// Only supports WebAssembly 
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="uri"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public static async Task AddMasaI18nWithHttpClient(this IServiceCollection services, IEnumerable<LanguageSetting> languageSettings)
+        public static async Task AddMasaI18nForWasm(this IServiceCollection services, string baseUri, LanguageConfig languageConfig)
         {
+            SetHttpClientBaseUri(baseUri);
             var languageMap = new List<(string language, Dictionary<string, string>)>();
-            foreach (var setting in languageSettings)
+            foreach (var language in languageConfig.Languages)
             {
-                var map = await _httpClient.GetFromJsonAsync<Dictionary<string, string>>(setting.FilePath);
-                languageMap.Add((setting.Value, map));
+                var map = await _httpClient.GetFromJsonAsync<Dictionary<string, string>>(language.FilePath);
+                languageMap.Add((language.Value, map));
             }
-            services.AddMasaI18n(languageMap, languageSettings.FirstOrDefault(setting => setting.IsDefaultLanguage)?.Value);
+            services.AddMasaI18n(languageMap, languageConfig.DefaultLanguage);
         }
 
-        /// <summary>
-        /// Only supports WebAssembly 
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="uri"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public static async Task AddMasaI18nWithHttpClient(this IServiceCollection services, string baseUri, string uri)
+        public static async Task AddMasaI18nForWasm(this IServiceCollection services, string baseUri, string uri)
         {
-            _httpClient.BaseAddress = new Uri(baseUri);
-            var languageSettings = await _httpClient.GetFromJsonAsync<List<LanguageSetting>>(uri) ?? throw new Exception("Failed to read i18n josn file data!");
-            await services.AddMasaI18nWithHttpClient(languageSettings);
+            SetHttpClientBaseUri(baseUri);
+            var languageConfig = await _httpClient.GetFromJsonAsync<LanguageConfig>(uri) ?? throw new Exception("Failed to read i18n json file data!");
+            await services.AddMasaI18nForWasm(baseUri, languageConfig);
         }
 
         public static ParameterView GetMasaI18nParameter(this IServiceProvider servicesProvider)
@@ -100,21 +94,36 @@ namespace Microsoft.Extensions.DependencyInjection
             var i18nConfig = servicesProvider.GetRequiredService<I18nConfig>();
             return ParameterView.FromDictionary(new Dictionary<string, object?> { [nameof(I18nConfig)] = i18nConfig });
         }
+
+        static void SetHttpClientBaseUri(string baseUri)
+        {
+            if (_httpClient.BaseAddress is null) _httpClient.BaseAddress = new Uri(baseUri);
+        }
     }
 
-    public class LanguageSetting
+    public class LanguageConfig
     {
-        public LanguageSetting(string value, string? filePath, bool isDefaultLanguage = false)
+
+        public string? DefaultLanguage { get; set; }
+
+        public List<Language> Languages { get; set; }
+
+        public LanguageConfig(string? defaultLanguage, List<Language> languages)
+        {
+            DefaultLanguage = defaultLanguage;
+            Languages = languages;
+        }
+    }
+
+    public class Language
+    {
+        public Language(string value, string filePath)
         {
             Value = value;
             FilePath = filePath;
-            IsDefaultLanguage = isDefaultLanguage;
         }
-
         public string Value { get; set; }
 
         public string FilePath { get; set; }
-
-        public bool IsDefaultLanguage { get; set; }
     }
 }

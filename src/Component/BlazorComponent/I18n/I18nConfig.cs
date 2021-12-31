@@ -6,13 +6,6 @@ namespace BlazorComponent.I18n
     {
         CookieStorage? _cookieStorage;
 
-        public I18nConfig() { }
-
-        public I18nConfig(CookieStorage cookieStorage)
-        {
-            _cookieStorage = cookieStorage;
-        }
-
         public static string LanguageCookieKey { get; set; } = "Masa_I18nConfig_Language";
 
         private string? _language;
@@ -27,7 +20,12 @@ namespace BlazorComponent.I18n
             }
         }
 
-        public static string? GloablLanguage { get; set; }
+        public I18nConfig() { }
+
+        public I18nConfig(CookieStorage cookieStorage)
+        {
+            _cookieStorage = cookieStorage;
+        }
 
         public void Initialization(IRequestCookieCollection cookies)
         {
@@ -36,10 +34,10 @@ namespace BlazorComponent.I18n
 
         public async Task Initialization()
         {
-            if(_cookieStorage is not null)
+            if (_cookieStorage is not null)
             {
                 _language = await _cookieStorage.GetCookie(LanguageCookieKey);
-            }            
+            }
         }
 
         public void Bind(I18nConfig i18NConfig)
