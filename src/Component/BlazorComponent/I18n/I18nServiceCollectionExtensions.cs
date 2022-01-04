@@ -103,7 +103,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
     public class LanguageConfig
     {
-
         public string? DefaultLanguage { get; set; }
 
         public List<Language> Languages { get; set; }
@@ -116,14 +115,15 @@ namespace Microsoft.Extensions.DependencyInjection
     }
 
     public class Language
-    {
+    {      
+        public string Value { get; set; }
+
+        public string FilePath { get; set; }
+
         public Language(string value, string filePath)
         {
             Value = value;
             FilePath = filePath;
         }
-        public string Value { get; set; }
-
-        public string FilePath { get; set; }
     }
 }
