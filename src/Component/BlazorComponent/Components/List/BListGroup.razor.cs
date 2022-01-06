@@ -82,16 +82,7 @@ namespace BlazorComponent
             base.OnInitialized();
 
             List?.Register(this);
-
-            NavigationManager.LocationChanged += OnLocationChanged;
-
             UpdateActiveForLinkage();
-        }
-
-        private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-        {
-            UpdateActiveForLinkage();
-            InvokeStateHasChanged();
         }
 
         internal void Toggle(string id)
@@ -125,9 +116,6 @@ namespace BlazorComponent
         protected override void Dispose(bool disposing)
         {
             List?.Unregister(this);
-
-            NavigationManager.LocationChanged -= OnLocationChanged;
-
             base.Dispose(disposing);
         }
     }
