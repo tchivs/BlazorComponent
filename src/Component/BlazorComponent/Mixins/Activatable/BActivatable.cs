@@ -1,283 +1,190 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using BlazorComponent.Web;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace BlazorComponent;
-
-public abstract class BActivatable : BDelayable, IActivatable
+namespace BlazorComponent
 {
-    private readonly string _activatorId;
-
-    private bool _isActive;
-
-    private ElementReference? _externalActivatorRef;
-
-    private Dictionary<string, EventCallback<FocusEventArgs>> _focusListeners = new();
-    private Dictionary<string, EventCallback<KeyboardEventArgs>> _keyboardListeners = new();
-    private Dictionary<string, (EventCallback<MouseEventArgs> listener, EventListenerActions actions)> _mouseListeners = new();
-
-    protected BActivatable()
+    public class BActivatable : BDelayable, IActivatable, IHandleEvent
     {
-        _activatorId = $"_activator_{Guid.NewGuid()}";
-    }
+        private string _activatorId;
 
-    private string InternalActivatorSelector => $"[{_activatorId}]";
-
-    protected string ActivatorSelector => _externalActivatorRef.HasValue
-        ? Document.GetElementByReference(_externalActivatorRef.Value).Selector
-        : InternalActivatorSelector;
-
-    protected HtmlElement ActivatorElement { get; private set; }
-
-    protected virtual bool IsActive
-    {
-        get => _isActive;
-        set
+        [Parameter]
+        public bool Disabled
         {
-            if (Disabled) return;
-
-            _isActive = value;
+            get => GetValue<bool>();
+            set => SetValue(value);
         }
-    }
 
-    protected bool HasActivator => ActivatorContent != null || _externalActivatorRef != null;
-
-    public RenderFragment ComputedActivatorContent
-    {
-        get
+        [Parameter]
+        public bool OpenOnHover
         {
-            if (ActivatorContent != null)
+            get => GetValue<bool>();
+            set => SetValue(value);
+        }
+
+        [Parameter]
+        public bool OpenOnFocus
+        {
+            get => GetValue<bool>();
+            set => SetValue(value);
+        }
+
+        [Parameter]
+        public bool Value
+        {
+            get => GetValue<bool>();
+            set => SetValue(value);
+        }
+
+        [Parameter]
+        public EventCallback<bool> ValueChanged { get; set; }
+
+        [Parameter]
+        public RenderFragment<ActivatorProps> ActivatorContent { get; set; }
+
+        protected bool IsBooted { get; set; }
+
+        protected Dictionary<string, object> ActivatorEvents { get; set; } = new();
+
+        public virtual Dictionary<string, object> ActivatorAttributes => new(ActivatorEvents)
+        {
+            { ActivatorId, true },
+            { "role", "button" },
+            { "aria-haspopup", true },
+            { "aria-expanded", IsActive }
+        };
+
+        protected string ActivatorId => _activatorId ??= $"_activator_{Guid.NewGuid()}";
+
+        protected string ActivatorSelector => $"[{ActivatorId}]";
+
+        protected RenderFragment ComputedActivatorContent
+        {
+            get
             {
-                var props = new ActivatorProps(GenActivatorAttributes());
+                if (ActivatorContent == null)
+                {
+                    return null;
+                }
+
+                var props = new ActivatorProps(ActivatorAttributes);
                 return ActivatorContent(props);
             }
-
-            return null;
         }
-    }
 
-    [Inject]
-    public Document Document { get; set; }
+        bool IActivatable.IsActive => IsActive;
 
-    [Parameter]
-    public RenderFragment<ActivatorProps> ActivatorContent { get; set; }
+        RenderFragment IActivatable.ComputedActivatorContent => ComputedActivatorContent;
 
-    [Parameter]
-    public bool Disabled
-    {
-        get => GetValue<bool>();
-        set => SetValue(value);
-    }
+        async Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
+        {
+            await item.InvokeAsync(arg);
+        }
 
-    [Parameter]
-    public bool OpenOnHover { get; set; }
+        protected override void OnWatcherInitialized()
+        {
+            Watcher
+                .Watch<bool>(nameof(Disabled), val => { ResetActivatorEvents(); })
+                .Watch<bool>(nameof(Value), OnValueChanged)
+                .Watch<bool>(nameof(OpenOnFocus), () => { ResetActivatorEvents(); })
+                .Watch<bool>(nameof(OpenOnHover), () => { ResetActivatorEvents(); });
+        }
 
-    [Parameter]
-    public bool OpenOnFocus { get; set; }
-
-    [Parameter]
-    public virtual bool Value
-    {
-        get => IsActive;
-        set => IsActive = value;
-    }
-
-    [Parameter]
-    public EventCallback<bool> ValueChanged { get; set; }
-
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-
-        Watcher
-            .Watch<bool>(nameof(Disabled), val =>
+        protected virtual void OnValueChanged(bool value)
+        {
+            if (IsActive != value)
             {
-                _ = ResetActivator();
-            });
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await ResetActivator();
-        }
-    }
-
-    protected virtual async Task Open()
-    {
-        await RunOpenDelay(() => UpdateValue(true));
-    }
-
-    protected virtual async Task Close()
-    {
-        await RunCloseDelay(() => UpdateValue(false));
-    }
-
-    protected virtual Task Toggle()
-    {
-        return UpdateValue(!Value);
-    }
-
-    protected async Task UpdateValue(bool value)
-    {
-        if (ValueChanged.HasDelegate)
-        {
-            await ValueChanged.InvokeAsync(value);
-        }
-        else
-        {
-            Value = value;
-        }
-    }
-
-    private async Task AddActivatorEvents()
-    {
-        if (Disabled || GetActivator() == null) return;
-
-        _focusListeners = GenActivatorFocusListeners();
-
-        _mouseListeners = GenActivatorMouseListeners();
-
-        _keyboardListeners = GenActivatorKeyboardListeners();
-
-        foreach (var (key, (listener, actions)) in _mouseListeners)
-        {
-            await ActivatorElement.AddEventListenerAsync(key, listener, false, actions);
-        }
-
-        foreach (var (key, value) in _focusListeners)
-        {
-            await ActivatorElement.AddEventListenerAsync(key, value, false);
-        }
-
-        foreach (var (key, value) in _keyboardListeners)
-        {
-            await ActivatorElement.AddEventListenerAsync(key, value, false);
-        }
-    }
-
-    private Dictionary<string, object> GenActivatorAttributes()
-    {
-        return new Dictionary<string, object>
-        {
-            {_activatorId, true},
-            {"role", "button"},
-            {"aria-haspopup", true},
-            {"aria-expanded", IsActive}
-        };
-    }
-
-    protected virtual Dictionary<string, (EventCallback<MouseEventArgs> listener, EventListenerActions actions)> GenActivatorMouseListeners()
-    {
-        Dictionary<string, (EventCallback<MouseEventArgs>, EventListenerActions)> listeners = new();
-
-        if (Disabled) return listeners;
-
-        if (OpenOnHover)
-        {
-            listeners.Add("mouseenter", (CreateEventCallback<MouseEventArgs>(_ => Open()), null));
-
-            listeners.Add("mouseleave", (CreateEventCallback<MouseEventArgs>(_ => Close()), null));
-        }
-        else
-        {
-            listeners.Add("click", (CreateEventCallback<MouseEventArgs>(async _ =>
-            {
-                await JsInvokeAsync(JsInteropConstants.Focus, ActivatorSelector);
-                await Toggle();
-            }), new EventListenerActions(true)));
-        }
-
-        return listeners;
-    }
-
-    protected virtual Dictionary<string, EventCallback<FocusEventArgs>> GenActivatorFocusListeners()
-    {
-        Dictionary<string, EventCallback<FocusEventArgs>> listeners = new();
-
-        if (Disabled || !OpenOnFocus) return listeners;
-
-        listeners.Add("focus", CreateEventCallback<FocusEventArgs>(_ => Open()));
-
-        listeners.Add("blur", CreateEventCallback<FocusEventArgs>(_ => Close()));
-
-        return listeners;
-    }
-
-    protected virtual Dictionary<string, EventCallback<KeyboardEventArgs>> GenActivatorKeyboardListeners()
-    {
-        Dictionary<string, EventCallback<KeyboardEventArgs>> listeners = new();
-
-        if (Disabled) return listeners;
-
-        listeners.Add("keydown", CreateEventCallback<KeyboardEventArgs>(async args =>
-        {
-            if (args.Key == "Escape")
-            {
-                await Close();
+                _ = value
+                    ? RunOpenDelayAsync()
+                    : RunCloseDelayAsync();
             }
-        }));
-
-        return listeners;
-    }
-
-    protected HtmlElement GetActivator()
-    {
-        if (ActivatorElement != null) return ActivatorElement;
-
-        if (ActivatorContent != null)
-        {
-            ActivatorElement = Document.QuerySelector(InternalActivatorSelector);
-        }
-        else if (_externalActivatorRef != null)
-        {
-            ActivatorElement = Document.GetElementByReference(_externalActivatorRef.Value);
         }
 
-        return ActivatorElement;
-    }
-
-    private async Task RemoveActivatorEvents()
-    {
-        if (ActivatorElement == null) return;
-
-        foreach (var (key, _) in _mouseListeners)
+        private void ResetActivatorEvents()
         {
-            await ActivatorElement.RemoveEventListenerAsync(key);
+            ActivatorEvents.Clear();
+            AddActivatorEvents();
         }
 
-        foreach (var (key, _) in _focusListeners)
+        protected override void OnInitialized()
         {
-            await ActivatorElement.RemoveEventListenerAsync(key);
+            base.OnInitialized();
+            ResetActivatorEvents();
         }
 
-        foreach (var (key, _) in _keyboardListeners)
+        private void AddActivatorEvents()
         {
-            await ActivatorElement.RemoveEventListenerAsync(key);
+            if (Disabled)
+            {
+                return;
+            }
+
+            if (OpenOnHover)
+            {
+                ActivatorEvents.Add("onmouseenter", CreateEventCallback<MouseEventArgs>(HandleOnMouseEnterAsync));
+                ActivatorEvents.Add("onmouseleave", CreateEventCallback<MouseEventArgs>(HandleOnMouseLeaveAsync));
+            }
+            else
+            {
+                ActivatorEvents.Add("onexclick", CreateEventCallback<MouseEventArgs>(HandleOnClickAsync));
+                ActivatorEvents.Add("__internal_stopPropagation_onexclick", true);
+            }
+
+            if (OpenOnFocus)
+            {
+                ActivatorEvents.Add("onfocus", CreateEventCallback<FocusEventArgs>(HandleOnFocusAsync));
+                ActivatorEvents.Add("onblur", CreateEventCallback<FocusEventArgs>(HandleOnBlurAsync));
+            }
         }
 
-        _mouseListeners.Clear();
-        _focusListeners.Clear();
-        _keyboardListeners.Clear();
-    }
+        private async Task HandleOnMouseEnterAsync(MouseEventArgs args)
+        {
+            await RunOpenDelayAsync();
+        }
 
-    public async Task UpdateActivator(ElementReference el)
-    {
-        _externalActivatorRef = el;
-        await ResetActivator();
-    }
+        protected override async Task OnActiveUpdated(bool value)
+        {
+            // await OnIsActiveSettingAsync(value);
+            
+            if (IsActive != Value && ValueChanged.HasDelegate)
+            {
+                await ValueChanged.InvokeAsync(IsActive);
+            }
+            else
+            {
+                StateHasChanged();
+            }
+        }
 
-    private async Task ResetActivator()
-    {
-        await RemoveActivatorEvents();
-        ActivatorElement = null;
-        GetActivator();
-        await AddActivatorEvents();
+        // protected virtual Task OnIsActiveSettingAsync(bool isActive)
+        // {
+        //     return Task.CompletedTask;
+        // }
+
+        private async Task HandleOnMouseLeaveAsync(MouseEventArgs args)
+        {
+            await RunCloseDelayAsync();
+        }
+
+        protected virtual async Task HandleOnClickAsync(MouseEventArgs args)
+        {
+            // TODO: focus
+
+            await RunOpenDelayAsync();
+        }
+
+        private async Task HandleOnFocusAsync(FocusEventArgs args)
+        {
+            await RunOpenDelayAsync();
+        }
+
+        private async Task HandleOnBlurAsync(FocusEventArgs args)
+        {
+            await RunCloseDelayAsync();
+        }
     }
 }

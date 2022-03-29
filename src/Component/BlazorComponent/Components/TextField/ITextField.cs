@@ -47,6 +47,8 @@ namespace BlazorComponent
 
         string Type { get; }
 
+        TValue InputValue { get; }
+
         EventCallback<FocusEventArgs> OnBlur { get; }
 
         EventCallback<FocusEventArgs> OnFocus { get; }
@@ -75,6 +77,8 @@ namespace BlazorComponent
         ElementReference PrefixElement { set; }
 
         ElementReference PrependInnerElement { set; }
+
+        Dictionary<string, object> InputSlotAttrs { get; }
 
         Task HandleOnPrependInnerClickAsync(MouseEventArgs args);
 

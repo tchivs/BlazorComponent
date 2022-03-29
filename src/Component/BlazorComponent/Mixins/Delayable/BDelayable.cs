@@ -1,57 +1,78 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 
 namespace BlazorComponent;
 
-public class BDelayable : BDomComponentBase, IDelayable
+public class BDelayable : BDomComponentBase, IAsyncDisposable
 {
-    private IDelayable _delayer;
-
-    private int _openDelay;
-    private bool _openDelayChanged = true;
-
-    private int _closeDelay;
-    private bool _closeDelayChanged = true;
+    [Parameter]
+    public int OpenDelay { get; set; }
 
     [Parameter]
-    public virtual int OpenDelay
-    {
-        get => _openDelay;
-        set
-        {
-            if (_openDelay == value) return;
+    public int CloseDelay { get; set; }
 
-            _openDelayChanged = true;
-            _openDelay = value;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<BDelayable> _dotNetRef;
+
+    protected bool IsActive { get; private set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+
+            _module = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorComponent/js/delayable.js");
+            await _module!.InvokeVoidAsync("init", _dotNetRef, OpenDelay, CloseDelay);
         }
+
+        await base.OnAfterRenderAsync(firstRender);
     }
 
-    [Parameter]
-    public virtual int CloseDelay
+    [JSInvokable]
+    public async Task SetActive(bool value)
     {
-        get => _closeDelay;
-        set
-        {
-            if (_closeDelay == value) return;
-
-            _closeDelayChanged = true;
-            _closeDelay = value;
-        }
+        await OnActiveUpdating(value);
+        IsActive = value;
+        await OnActiveUpdated(value);
+        StateHasChanged();
     }
 
-    protected override void OnParametersSet()
+    protected virtual Task OnActiveUpdating(bool value)
     {
-        base.OnParametersSet();
-
-        if (_openDelayChanged || _closeDelayChanged)
-        {
-            _delayer = new Delayer(this);
-
-            _openDelayChanged = false;
-            _closeDelayChanged = false;
-        }
+        return Task.CompletedTask;
     }
 
-    public Task RunOpenDelay(Func<Task> cb = null) => _delayer.RunOpenDelay(cb);
+    protected virtual Task OnActiveUpdated(bool value)
+    {
+        return Task.CompletedTask;
+    }
 
-    public Task RunCloseDelay(Func<Task> cb = null) => _delayer.RunCloseDelay(cb);
+    protected async Task RunOpenDelayAsync()
+    {
+        await _module!.InvokeVoidAsync("runDelay", _dotNetRef, "open");
+    }
+
+    protected async Task RunCloseDelayAsync()
+    {
+        await _module!.InvokeVoidAsync("runDelay", _dotNetRef, "close");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null && _dotNetRef is not null)
+            {
+                await _module.InvokeVoidAsync("remove", _dotNetRef);
+                await _module.DisposeAsync();
+            }
+
+            _dotNetRef?.Dispose();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
 }

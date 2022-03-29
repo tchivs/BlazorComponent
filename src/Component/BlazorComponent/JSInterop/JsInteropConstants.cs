@@ -75,7 +75,7 @@
         public static string FocusDialog => $"{Variables.JsInteropFuncNamePrefix}focusDialog";
 
         public static string GetWindow => $"{Variables.JsInteropFuncNamePrefix}getWindow";
-        
+
         public static string GetWindowAndDocumentProps => $"{Variables.JsInteropFuncNamePrefix}getWindowAndDocumentProps";
 
         public static string DisableBodyScroll => $"{Variables.JsInteropFuncNamePrefix}disableBodyScroll";
@@ -145,8 +145,12 @@
         public static string InitStepperWrapper => $"{Variables.JsInteropFuncNamePrefix}initStepperWrapper";
 
         public static string UpdateCanvas => $"{Variables.JsInteropFuncNamePrefix}updateCanvas";
-        
-        public  static string ContainsActiveElement => $"{Variables.JsInteropFuncNamePrefix}containsActiveElement";
+
+        public static string ContainsActiveElement => $"{Variables.JsInteropFuncNamePrefix}containsActiveElement";
+
+        public static string CopyChild => $"{Variables.JsInteropFuncNamePrefix}copyChild";
+
+        public static string CopyText => $"{Variables.JsInteropFuncNamePrefix}copyText";
 
         #region Draggable Modal
 
@@ -165,6 +169,12 @@
         public static string CheckElementFixed => $"{Variables.JsInteropFuncNamePrefix}checkElementFixed";
 
         public static string InsertToFirst => $"{Variables.JsInteropFuncNamePrefix}insertToFirst";
+
+        public static string GetMenuableDimensions => $"{Variables.JsInteropFuncNamePrefix}getMenuableDimensions";
+
+        public static string ObserveElement => $"{Variables.JsInteropFuncNamePrefix}observeElement";
+
+        public static string InvokeMultipleMethod => $"{Variables.JsInteropFuncNamePrefix}invokeMultipleMethod";
 
         #endregion Draggable Modal
     }
